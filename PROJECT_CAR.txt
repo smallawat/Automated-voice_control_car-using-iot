@@ -1,0 +1,184 @@
+#include <WiFi.h>
+#include <IOXhop_FirebaseESP32.h>
+WiFiClient client;
+WiFiServer server(80);
+const char* ssid = "#enter the wifi name";
+const char* password = "#enter the passwaord";
+#define FIREBASE_HOST "#enter the host url"
+#define FIREBASE_AUTH "#enter the Firebase authanicati0n code"
+
+
+
+int rightMotor2 = 13;  //2= - & 1= +
+int rightMotor1 = 27;   
+int leftMotor2 = 4;     
+int leftMotor1 = 2;    
+int eneLeftMotor = 12;  
+int eneRightMotor = 14; 
+int led = 34;
+int trig=25;
+int echo=26;
+int alert=32;
+
+long duration;
+int distance;
+
+
+
+
+void setup()
+{
+  Serial.begin(115200);
+
+  Serial.println("Connecting to WIFI");
+  WiFi.begin(ssid, password);
+  while ((!(WiFi.status() == WL_CONNECTED)))
+  {
+    delay(300);
+    Serial.print("..");
+  }
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("NodeMCU Local IP is : ");
+  Serial.print((WiFi.localIP()));
+
+
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+
+
+  pinMode(eneLeftMotor, OUTPUT); 
+  pinMode(eneRightMotor, OUTPUT); 
+  pinMode(leftMotor1, OUTPUT); 
+  pinMode(leftMotor2, OUTPUT);  
+  pinMode(rightMotor1, OUTPUT);  
+  pinMode(rightMotor2, OUTPUT);
+  pinMode(led, OUTPUT);  
+  pinMode(trig,OUTPUT);
+  pinMode(echo,INPUT);
+  pinMode(alert,OUTPUT);
+
+  digitalWrite(eneLeftMotor,LOW);
+  digitalWrite(eneRightMotor,LOW);
+  digitalWrite(leftMotor1,LOW);
+  digitalWrite(leftMotor2,LOW);
+  digitalWrite(rightMotor1,LOW);
+  digitalWrite(rightMotor2,LOW);
+  digitalWrite(led,LOW);
+  digitalWrite(alert,LOW);
+}
+void loop()
+{
+  String status=Firebase.getString("TESTAPP/ACTION");
+  if(status=="\\\"forward\\\"")
+  {
+    forwardMotor();
+  }
+   if(status=="\\\"backward\\\"")
+  {
+    reverseMotor();
+  } 
+  if(status=="\\\"left\\\"")
+  {
+    leftMotor();
+  } 
+  if(status=="\\\"right\\\"")
+  {
+    rightMotor();
+  } 
+  if(status=="\\\"stop\\\"")
+  {
+    stopMotor();
+  }
+  if(status=="\\\"detector\\\"")
+  {
+    detector();
+  }
+  digitalWrite(trig, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW);
+
+  duration = pulseIn(echo, HIGH);
+
+  distance= duration*0.034/2;
+
+  Serial.print("Distance: ");
+  Serial.println(distance);
+  if(distance<=20)
+  {
+    digitalWrite(alert,HIGH);
+    stopMotor();
+  }
+  else
+  {
+    digitalWrite(alert,LOW);
+  }
+} 
+
+
+void forwardMotor(void)   
+{
+  digitalWrite(eneLeftMotor,HIGH);
+  digitalWrite(eneRightMotor,HIGH);
+  Serial.println("forward");
+  digitalWrite(leftMotor1,HIGH);
+  digitalWrite(leftMotor2,LOW);
+  digitalWrite(rightMotor1,HIGH);
+  digitalWrite(rightMotor2,LOW);
+}
+
+
+void reverseMotor(void)   
+{
+  digitalWrite(eneLeftMotor,HIGH);
+  digitalWrite(eneRightMotor,HIGH);
+  Serial.println("reverse");
+  digitalWrite(leftMotor1,LOW);
+  digitalWrite(leftMotor2,HIGH);
+  digitalWrite(rightMotor1,LOW);
+  digitalWrite(rightMotor2,HIGH);
+}
+
+
+void leftMotor(void)   
+{
+  digitalWrite(eneLeftMotor,HIGH);
+  digitalWrite(eneRightMotor,HIGH); 
+  Serial.println("left");
+  digitalWrite(leftMotor1,LOW);
+  digitalWrite(leftMotor2,HIGH);
+  digitalWrite(rightMotor1,HIGH);
+  digitalWrite(rightMotor2,LOW);
+}
+
+
+void rightMotor(void)
+{
+  digitalWrite(eneLeftMotor,HIGH);
+  digitalWrite(eneRightMotor,HIGH);
+  Serial.println("right");
+  digitalWrite(leftMotor1,HIGH);
+  digitalWrite(leftMotor2,LOW);
+  digitalWrite(rightMotor1,LOW);
+  digitalWrite(rightMotor2,HIGH);
+}
+
+void stopMotor(void)   
+{
+  digitalWrite(eneLeftMotor,LOW);
+  digitalWrite(eneRightMotor,LOW);
+  Serial.println("Stop");
+  digitalWrite(leftMotor1,LOW);
+  digitalWrite(leftMotor2,LOW);
+  digitalWrite(rightMotor1,LOW);
+  digitalWrite(rightMotor2,LOW);
+}
+
+void detector(void)
+{
+  Serial.println("DETECTED");
+  digitalWrite(led,HIGH);
+  
+  }
